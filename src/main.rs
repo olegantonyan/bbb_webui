@@ -10,13 +10,21 @@ use staticfile::Static;
 use mount::Mount;
 use handlebars_iron::{Template, HandlebarsEngine, DirectorySource};
 use std::collections::HashMap;
+use std::env;
 
-const ASSETS_PATH: &'static str = "/home/oleg/projects/bbbui/src/assets/";
+
+fn assets_path() -> &'static str {
+    if cfg!(debug_assertions) {
+        "./src/assets/"
+    } else {
+        "./assets/"
+    }
+}
 
 fn index(_: &mut Request) -> IronResult<Response> {
     //Ok(Response::with((iron::status::Ok, "Index")))
-    let mut resp = Response::new();
 
+    let mut resp = Response::new();
     let mut data = HashMap::new();
     data.insert("name", "Rust");
     resp.set_mut(Template::new("index.html", data)).set_mut(iron::status::Ok);
@@ -33,21 +41,24 @@ fn main() {
     router.get("/", index, "index");
 
     let mut mount = Mount::new();
-    mount.mount("/static", Static::new(ASSETS_PATH));
+    mount.mount("/static", Static::new(assets_path()));
     mount.mount("/", router);
 
     let mut chain = Chain::new(mount);
     chain.link_after(response_printer);
 
 
-      let mut hbse = HandlebarsEngine::new();
-      hbse.add(Box::new(DirectorySource::new(ASSETS_PATH, ".hbs")));
-      if let Err(r) = hbse.reload() {
+    let mut hbse = HandlebarsEngine::new();
+    hbse.add(Box::new(DirectorySource::new(assets_path(), ".hbs")));
+    if let Err(r) = hbse.reload() {
         panic!("{}", r);
-      }
+    }
 
-      chain.link_after(hbse);
+    chain.link_after(hbse);
 
+
+    let path = env::current_dir().unwrap();
+println!("The current directory is {}", path.display());
 
     Iron::new(chain).http("0.0.0.0:3000").unwrap();
 }
