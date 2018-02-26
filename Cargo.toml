@@ -4,8 +4,5 @@ version = "0.1.0"
 authors = ["Oleg Antonyan <oleg.b.antonyan@gmail.com>"]
 
 [dependencies]
-iron = "*"
-router = "*"
-staticfile = "*"
-mount = "*"
-handlebars-iron = "*"
+rocket = "*"
+rocket_codegen = "*"
