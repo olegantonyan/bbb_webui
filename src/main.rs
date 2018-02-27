@@ -6,9 +6,13 @@ extern crate rocket_contrib;
 
 use rocket_contrib::Template;
 use rocket::response::NamedFile;
+use rocket::fairing::AdHoc;
+use rocket::State;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+struct AssetsDir(String);
 
 #[get("/")]
 pub fn index() -> Template {
@@ -18,14 +22,18 @@ pub fn index() -> Template {
 }
 
 #[get("/<asset..>")]
-fn assets(asset: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new("/home/oleg/projects/bbb_webui/src/assets").join(asset)).ok()
+fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
+    NamedFile::open(Path::new(&assets_dir.0).join(asset)).ok()
 }
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .mount("/", routes![index, assets])
         .attach(Template::fairing())
+        .attach(AdHoc::on_attach(|rocket| {
+            let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();
+            Ok(rocket.manage(AssetsDir(assets_dir)))
+        }))
 }
 
 fn main() {
