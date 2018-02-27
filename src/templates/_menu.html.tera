@@ -1,0 +1,9 @@
+{% macro menu(active) %}
+  <div class="pure-menu">
+    <a class="pure-menu-heading" href="/">BBB WEBUI</a>
+    <ul class="pure-menu-list">
+      <li class="pure-menu-item {% if active == "vpn" %}pure-menu-selected{% endif %}"><a href="/vpn" class="pure-menu-link">VPN</a></li>
+      <li class="pure-menu-item {% if active == "system" %}pure-menu-selected{% endif %}"><a href="/system" class="pure-menu-link">System</a></li>
+    </ul>
+  </div>
+{% endmacro menu %}

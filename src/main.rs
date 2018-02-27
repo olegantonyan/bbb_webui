@@ -21,6 +21,20 @@ pub fn index() -> Template {
     Template::render("index", &context)
 }
 
+#[get("/system")]
+pub fn system() -> Template {
+    let mut context = HashMap::new();
+    context.insert("name", "Rust");
+    Template::render("system", &context)
+}
+
+#[get("/vpn")]
+pub fn vpn() -> Template {
+    let mut context = HashMap::new();
+    context.insert("name", "Rust");
+    Template::render("vpn", &context)
+}
+
 #[get("/<asset..>")]
 fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
     NamedFile::open(Path::new(&assets_dir.0).join(asset)).ok()
@@ -28,7 +42,7 @@ fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", routes![index, assets])
+        .mount("/", routes![index, system, vpn, assets])
         .attach(Template::fairing())
         .attach(AdHoc::on_attach(|rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();

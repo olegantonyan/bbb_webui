@@ -1,16 +1,15 @@
 {% extends "_layout" %}
 {% import "_menu" as menu %}
 {% block menu %}
-{{ menu::menu(active="index") }}
+{{ menu::menu(active="vpn") }}
 {% endblock menu %}
 
 
-{% block title %}Index{% endblock title %}
+{% block title %}VPN{% endblock title %}
 
 {% block header %}
-Index
+VPN
 {% endblock header %}
 
 {% block content %}
-  Hello {{ name }}
 {% endblock content %}

@@ -1,16 +1,15 @@
 {% extends "_layout" %}
 {% import "_menu" as menu %}
 {% block menu %}
-{{ menu::menu(active="index") }}
+{{ menu::menu(active="system") }}
 {% endblock menu %}
 
 
-{% block title %}Index{% endblock title %}
+{% block title %}System{% endblock title %}
 
 {% block header %}
-Index
+System
 {% endblock header %}
 
 {% block content %}
-  Hello {{ name }}
 {% endblock content %}
