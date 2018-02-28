@@ -1,0 +1,9 @@
+{% extends "_layout" %}
+{% import "_menu" as menu %}
+{% block menu %}
+{{ menu::menu(active="none") }}
+{% endblock menu %}
+
+
+{% block title %}Rebooting...{% endblock title %}
+{% block header %}Rebooting...{% endblock header %}

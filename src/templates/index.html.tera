@@ -6,10 +6,7 @@
 
 
 {% block title %}Index{% endblock title %}
-
-{% block header %}
-Index
-{% endblock header %}
+{% block header %}Index{% endblock header %}
 
 {% block content %}
   Hello {{ name }}

@@ -6,10 +6,7 @@
 
 
 {% block title %}VPN{% endblock title %}
-
-{% block header %}
-VPN
-{% endblock header %}
+{% block header %}VPN{% endblock header %}
 
 {% block content %}
 {% endblock content %}

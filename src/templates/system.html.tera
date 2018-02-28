@@ -6,10 +6,25 @@
 
 
 {% block title %}System{% endblock title %}
-
-{% block header %}
-System
-{% endblock header %}
+{% block header %}System{% endblock header %}
 
 {% block content %}
+
+<div class="pure-g">
+  <div class="pure-u-1-2">
+    <p>
+      <form action="/system/reboot" method="post" accept-charset="utf-8" onsubmit="return confirm('Really reboot?');">
+        <input type="hidden" name="reboot" value="true">
+        <input type="submit" value="Reboot">
+      </form>
+    </p>
+  </div>
+
+  <div class="pure-u-1-2">
+    <p>
+      {{ uptime }}
+    </p>
+  </div>
+</div>
+
 {% endblock content %}
