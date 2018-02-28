@@ -1,3 +1,4 @@
 /target
 **/*.rs.bk
 *.tar.bz2
+bbb_webui-arm-unknown-linux-gnueabihf/
