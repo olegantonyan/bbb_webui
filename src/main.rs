@@ -4,6 +4,12 @@
 extern crate rocket;
 extern crate rocket_contrib;
 
+mod shell;
+mod openvpn;
+
+use shell::execute;
+use openvpn::run;
+
 use rocket_contrib::Template;
 use rocket::response::NamedFile;
 use rocket::fairing::AdHoc;
@@ -11,10 +17,7 @@ use rocket::State;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader};
-use std::thread;
-
+use std::process::Command;
 
 
 struct AssetsDir(String);
@@ -66,32 +69,7 @@ fn rocket() -> rocket::Rocket {
 }
 
 fn main() {
-    run_vpn();
+    shell::execute::execute("./1.sh".to_string());
+    openvpn::run::start();
     rocket().launch();
-}
-
-fn run_vpn() {
-    let handle = thread::spawn(|| {
-        let mut child = Command::new("./1.sh")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .unwrap();
-
-        let out = BufReader::new(child.stdout.take().unwrap());
-        let err = BufReader::new(child.stderr.take().unwrap());
-
-        let thread_err = thread::spawn(move || {
-            err.lines().for_each(|line|
-                println!("err: {}", line.unwrap())
-            );
-        });
-
-        out.lines().for_each(|line|
-            println!("out: {}", line.unwrap())
-        );
-
-        let status = child.wait().unwrap();
-        println!("{}", status);
-    });
 }
