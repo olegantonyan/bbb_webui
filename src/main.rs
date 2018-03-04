@@ -4,10 +4,8 @@
 extern crate rocket;
 extern crate rocket_contrib;
 
-mod shell;
 mod openvpn;
 
-use shell::execute;
 use openvpn::run;
 
 use rocket_contrib::Template;
@@ -69,7 +67,6 @@ fn rocket() -> rocket::Rocket {
 }
 
 fn main() {
-    shell::execute::execute("./1.sh".to_string());
     openvpn::run::start();
     rocket().launch();
 }
