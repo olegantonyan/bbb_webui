@@ -67,6 +67,6 @@ fn rocket() -> rocket::Rocket {
 }
 
 fn main() {
-    openvpn::run::start();
+    openvpn::start();
     rocket().launch();
 }

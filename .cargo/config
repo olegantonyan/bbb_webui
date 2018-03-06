@@ -5,5 +5,5 @@ linker = 'musl-gcc'
 linker = "arm-linux-gnueabihf-gcc"
 
 [target.arm-unknown-linux-musleabihf]
-linker = "arm-linux-musleabihf-gcc"
-# ln -s /home/oleg/bin/buildroot-2017.02.10/output/host/usr/bin/arm-buildroot-linux-musleabihf-gcc-5.4.0.br_real /home/oleg/bin/arm-linux-musleabihf-gcc
+linker = "/home/oleg/bin/arm-buildroot-linux-musleabihf/bin/arm-linux-gcc"
+# CC_arm_unknown_linux_musleabihf='/home/oleg/bin/arm-buildroot-linux-musleabihf/bin/arm-linux-gcc' cargo build

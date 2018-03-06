@@ -11,3 +11,6 @@ rocket_codegen = "*"
 version = "*"
 default-features = false
 features = ["tera_templates"]
+
+[profile.release]
+panic = "abort"
