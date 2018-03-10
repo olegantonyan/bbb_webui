@@ -29,7 +29,7 @@ impl Process {
         thread::spawn(move || {
             let mut child = Command::new("./1.sh").stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
-            {   // handle stderr
+            /*{   // handle stderr
                 let procout = Arc::clone(&self_clone.state);
                 let err = BufReader::new(child.stderr.take().unwrap());
                 thread::spawn(move || {
@@ -38,7 +38,8 @@ impl Process {
                         pout.append_line(line.unwrap(), ProcessOutputType::STDERR)
                     }
                 });
-            }
+            }*/
+            self.setup_stderr();
 
             {   // handle stdout
                 let procout = Arc::clone(&self_clone.state);
@@ -62,6 +63,17 @@ impl Process {
             //println!("{:?}", &self_clone.output);
 
         })
+    }
+
+    fn setup_stderr(&self) {
+        let procout = Arc::clone(&self.clone().state);
+        let err = BufReader::new(child.stderr.take().unwrap());
+        thread::spawn(move || {
+            for line in err.lines() {
+                let mut pout = procout.lock().unwrap();
+                pout.append_line(line.unwrap(), ProcessOutputType::STDERR)
+            }
+        });
     }
 }
 
