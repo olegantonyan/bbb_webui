@@ -1,13 +1,13 @@
 use std::default::Default;
-use super::Processable;
+use super::ServiceConfig;
 
 
 #[derive(Debug)]
 pub struct OpenVPN {
 }
 
-impl Processable for OpenVPN {
-    fn command(&self) -> String {
+impl ServiceConfig for OpenVPN {
+    fn start_command(&self) -> String {
         "./1.sh".to_string()
     }
 }
