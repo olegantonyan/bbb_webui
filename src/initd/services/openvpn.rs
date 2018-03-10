@@ -4,17 +4,18 @@ use super::ServiceConfig;
 
 #[derive(Debug)]
 pub struct OpenVPN {
+    executable: &'static str
 }
 
 impl ServiceConfig for OpenVPN {
-    fn start_command(&self) -> String {
-        "./1.sh".to_string()
+    fn executable(&self) -> String {
+        self.executable.to_string()
     }
 }
 
 impl Default for OpenVPN {
     fn default() -> Self {
-        Self { }
+        Self { executable: "./1.sh" }
     }
 }
 

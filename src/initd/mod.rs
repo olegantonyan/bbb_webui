@@ -1,6 +1,8 @@
 pub mod process;
 pub mod services;
 
+use self::services::ServiceConfig;
+use self::process::Process;
 
 pub struct InitD {
 }
@@ -11,8 +13,9 @@ impl Default for InitD {
     }
 }
 
-//impl<T: Processable> InitD {
-//    pub fn start_process(&self, process_config: T) {
-//        Process::new(process_config);
-//    }
-//}
+impl InitD {
+    pub fn start_process<T: ServiceConfig>(&self, config: T) {
+        let p = Process::new();
+        p.start(config);
+    }
+}

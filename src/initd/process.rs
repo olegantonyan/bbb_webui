@@ -1,4 +1,4 @@
-use super::services
+use super::services::ServiceConfig;
 
 use std::default::Default;
 use std::process::{Command, Stdio};
@@ -6,7 +6,6 @@ use std::io::{BufRead, BufReader};
 use std::thread;
 use std::vec::Vec;
 use std::sync::{Mutex, Arc};
-use std::marker::Sync;
 
 
 #[derive(Debug, Clone)]
@@ -15,7 +14,7 @@ pub struct Process {
 }
 
 impl Process {
-    pub fn new(config: services::ServiceConfig) -> Self {
+    pub fn new() -> Self {
         Self { state: Arc::new(Mutex::new(ProcessState::default())) }
     }
 
@@ -25,11 +24,12 @@ impl Process {
         (*pout).clone()
     }
 
-    pub fn start(&self) -> thread::JoinHandle<()> {
+    pub fn start<T: ServiceConfig>(&self, config: T) -> thread::JoinHandle<()> {
         let self_clone = self.clone();
+        let executable = config.executable();
 
         thread::spawn(move || {
-            let mut child = Command::new("./1.sh").stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+            let mut child = Command::new(executable).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
             {   // handle stderr
                 let procout = Arc::clone(&self_clone.state);
@@ -48,7 +48,7 @@ impl Process {
                 thread::spawn(move || {
                     for line in out.lines() {
                         let mut pout = procout.lock().unwrap();
-                        println!("{:?}", (*pout).pid);
+                        //println!("{:?}", (*pout).pid);
                         pout.append_line(line.unwrap(), ProcessOutputType::STDOUT)
                     }
                 });
@@ -132,7 +132,7 @@ impl Default for ProcessState {
 }
 
 #[derive(Debug)]
-enum ProcessOutputType {
+pub enum ProcessOutputType {
     STDERR,
     STDOUT
 }
