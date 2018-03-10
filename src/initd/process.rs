@@ -1,14 +1,17 @@
 use super::services::ServiceConfig;
 
+use libc;
+
 use std::default::Default;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::thread;
 use std::vec::Vec;
 use std::sync::{Mutex, Arc};
+use std::time::Duration;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Process {
     state: Arc<Mutex<ProcessState>>
 }
@@ -24,26 +27,44 @@ impl Process {
         (*pout).clone()
     }
 
+    pub fn term(&self, th: thread::JoinHandle<()>) -> Result<(), &str> {
+        self.send_signal(15);
+        for i in 1..100 {
+            if self.state().status == ProcessStatusType::TERMINATED {
+                return Ok(());
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+        self.kill();
+        Err("killed")
+    }
+
+    pub fn kill(&self) {
+        self.send_signal(9);
+    }
+
     pub fn start<T: ServiceConfig>(&self, config: T) -> thread::JoinHandle<()> {
-        let self_clone = self.clone();
+        let state = Arc::clone(&self.state);
         let executable = config.executable();
 
         thread::spawn(move || {
             let mut child = Command::new(executable).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
+            //self.setup_stderr(&mut child, &state);
             {   // handle stderr
-                let procout = Arc::clone(&self_clone.state);
+                let procout = Arc::clone(&state);
                 let err = BufReader::new(child.stderr.take().unwrap());
                 thread::spawn(move || {
                     for line in err.lines() {
                         let mut pout = procout.lock().unwrap();
                         pout.append_line(line.unwrap(), ProcessOutputType::STDERR)
                     }
+                    //println!("FINISHED ERR");
                 });
             }
 
             {   // handle stdout
-                let procout = Arc::clone(&self_clone.state);
+                let procout = Arc::clone(&state);
                 let out = BufReader::new(child.stdout.take().unwrap());
                 thread::spawn(move || {
                     for line in out.lines() {
@@ -51,11 +72,12 @@ impl Process {
                         //println!("{:?}", (*pout).pid);
                         pout.append_line(line.unwrap(), ProcessOutputType::STDOUT)
                     }
+                    //println!("FINISHED OUT");
                 });
             }
 
             {   // set pid
-                let procout = Arc::clone(&self_clone.state);
+                let procout = Arc::clone(&state);
                 let mut pout = procout.lock().unwrap();
                 pout.set_pid(Some(child.id()));
                 pout.set_status(ProcessStatusType::RUNNING);
@@ -63,7 +85,7 @@ impl Process {
 
             let status = child.wait().unwrap();
             {   // set exit status
-                let procout = Arc::clone(&self_clone.state);
+                let procout = Arc::clone(&state);
                 let mut pout = procout.lock().unwrap();
                 pout.set_pid(None);
                 pout.set_exit_code(status.code());
@@ -73,6 +95,15 @@ impl Process {
                 }
             }
         })
+    }
+
+    fn send_signal(&self, signal: i32) {
+        let st = self.state();
+        if st.status == ProcessStatusType::RUNNING {
+            unsafe {
+                libc::kill(st.pid.unwrap() as i32, signal);
+            }
+        }
     }
 }
 
@@ -137,7 +168,7 @@ pub enum ProcessOutputType {
     STDOUT
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum ProcessStatusType {
     CREATED,
     RUNNING,
