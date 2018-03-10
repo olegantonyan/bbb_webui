@@ -11,6 +11,10 @@ impl ServiceConfig for OpenVPN {
     fn executable(&self) -> String {
         self.executable.to_string()
     }
+
+    fn name(&self) -> &'static str {
+        "OpenVPN"
+    }
 }
 
 impl Default for OpenVPN {

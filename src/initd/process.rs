@@ -27,13 +27,13 @@ impl Process {
         (*pout).clone()
     }
 
-    pub fn term(&self, th: thread::JoinHandle<()>) -> Result<(), &str> {
+    pub fn term(&self) -> Result<(), &str> {
         self.send_signal(15);
-        for i in 1..100 {
-            if self.state().status == ProcessStatusType::TERMINATED {
+        for _i in 1..200 {
+            if self.state().status == ProcessStatusType::TERMINATED || self.state().status == ProcessStatusType::FINISHED {
                 return Ok(());
             }
-            thread::sleep(Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(50));
         }
         self.kill();
         Err("killed")
@@ -50,7 +50,6 @@ impl Process {
         thread::spawn(move || {
             let mut child = Command::new(executable).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
-            //self.setup_stderr(&mut child, &state);
             {   // handle stderr
                 let procout = Arc::clone(&state);
                 let err = BufReader::new(child.stderr.take().unwrap());
