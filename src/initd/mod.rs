@@ -20,10 +20,23 @@ impl InitD {
     pub fn start_process<T: ServiceConfig>(&self, config: T) {
         let p = Process::new();
         let t = p.start(config);
-        thread::sleep(Duration::from_millis(1000));
-        p.term(t);
+
+        let h = ProcessHandle {
+            thread: t,
+            process: p
+        }
 
 
-        println!("{:?}", p.state());
+
+        //thread::sleep(Duration::from_millis(1000));
+        //p.term(t);
+
+
+        println!("{:?}", h.process.p.state());
     }
+}
+
+struct ProcessHandle {
+    thread: thread::JoinHandle<()>,
+    process: Process
 }
