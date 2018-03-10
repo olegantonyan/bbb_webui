@@ -8,35 +8,46 @@ use std::io::{BufRead, BufReader};
 use std::thread;
 use std::vec::Vec;
 use std::sync::{Mutex, Arc};
+use std::marker::Sync;
 
 
 pub trait Processable {
     fn command(&self) -> String;
 }
 
-pub struct InitD<T: Processable> {
-    processes: Vec<T>
+pub struct InitD {
 }
 
-impl<T: Processable> Default for InitD<T> {
+impl Default for InitD {
     fn default() -> Self {
-        Self { processes: Vec::new() }
+        Self {}
     }
 }
 
-impl<T: Processable> InitD<T>  {
-    pub fn start_process(&self, process: T) {
-        self.execute(process.command());
+//impl<T: Processable> InitD {
+//    pub fn start_process(&self, process_config: T) {
+//        Process::new(process_config);
+//    }
+//}
+
+#[derive(Debug, Clone)]
+pub struct Process {
+    pub output: Arc<Mutex<ProcessOutput>>
+}
+
+impl Process {
+    pub fn new() -> Self {
+        Self { output: Arc::new(Mutex::new(ProcessOutput::default())) }
     }
 
-    fn execute(&self, executable: String) -> thread::JoinHandle<()> {
-        thread::spawn(|| {
-            let mut child = Command::new(executable).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
-            
-            let procout = Arc::new(Mutex::new(ProcessOutput::default()));
+    pub fn start(&self) -> thread::JoinHandle<()> {
+        let self_clone = self.clone();
+
+        thread::spawn(move || {
+            let mut child = Command::new("./1.sh").stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
             {   // handle stderr
-                let procout = Arc::clone(&procout);
+                let procout = Arc::clone(&self_clone.output);
                 let err = BufReader::new(child.stderr.take().unwrap());
                 thread::spawn(move || {
                     for line in err.lines() {
@@ -47,7 +58,7 @@ impl<T: Processable> InitD<T>  {
             }
 
             {   // handle stdout
-                let procout = Arc::clone(&procout);
+                let procout = Arc::clone(&self_clone.output);
                 let out = BufReader::new(child.stdout.take().unwrap());
                 thread::spawn(move || {
                     for line in out.lines() {
@@ -58,15 +69,15 @@ impl<T: Processable> InitD<T>  {
             }
 
             let status = child.wait().unwrap();
-            println!("{}", status);
-            println!("{:?}", procout);
+            //println!("{}", status);
+            //println!("{:?}", &self_clone.output);
 
         })
     }
 }
 
 #[derive(Debug)]
-struct ProcessOutput {
+pub struct ProcessOutput {
     stderr: Vec<String>,
     stdout: Vec<String>,
     cap: usize
