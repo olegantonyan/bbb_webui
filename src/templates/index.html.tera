@@ -9,5 +9,4 @@
 {% block header %}Index{% endblock header %}
 
 {% block content %}
-  Hello {{ name }}
 {% endblock content %}
