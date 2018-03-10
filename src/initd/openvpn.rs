@@ -3,6 +3,7 @@ use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::thread;
 use std::sync::mpsc;
+use std::vec::Vec;
 
 
 #[derive(Debug)]
@@ -17,23 +18,33 @@ impl Default for OpenVPN {
 
 #[derive(Debug)]
 struct ProcessOutput {
-    stderr: String,
-    stdout: String,
+    stderr: Vec<String>,
+    stdout: Vec<String>,
     cap: usize
 }
 
 impl ProcessOutput {
-    pub fn append_line(&mut self, data: &String, out_type: ProcessOutputType) {
+    pub fn append_line(&mut self, data: String, out_type: ProcessOutputType) {
         match out_type {
-            ProcessOutputType::STDERR => self.stderr.push_str(data),
-            ProcessOutputType::STDOUT => self.stdout.push_str(data)
+            ProcessOutputType::STDERR => {
+                if self.stderr.len() > self.cap {
+                    self.stderr.pop();
+                }
+                self.stderr.push(data)
+            },
+            ProcessOutputType::STDOUT => {
+                if self.stdout.len() > self.cap {
+                    self.stdout.pop();
+                }
+                self.stdout.push(data)
+            }
         }
     }
 }
 
 impl Default for ProcessOutput {
     fn default() -> Self {
-        Self { stderr: String::new(), stdout: String::new(), cap: 32768 }
+        Self { stderr: Vec::new(), stdout: Vec::new(), cap: 32768 }
     }
 }
 
@@ -74,12 +85,12 @@ impl OpenVPN {
                 );
             });
             for line in rx {
-                procout.append_line(&line, ProcessOutputType::STDERR)
+                procout.append_line(line, ProcessOutputType::STDERR)
             }
 
             out.lines().for_each(|line|
                 //println!("out: {}", line.unwrap())
-                procout.append_line(&line.unwrap(), ProcessOutputType::STDOUT)
+                procout.append_line(line.unwrap(), ProcessOutputType::STDOUT)
             );
 
             let status = child.wait().unwrap();
