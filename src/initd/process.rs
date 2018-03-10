@@ -29,7 +29,7 @@ impl Process {
         thread::spawn(move || {
             let mut child = Command::new("./1.sh").stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
 
-            /*{   // handle stderr
+            {   // handle stderr
                 let procout = Arc::clone(&self_clone.state);
                 let err = BufReader::new(child.stderr.take().unwrap());
                 thread::spawn(move || {
@@ -38,8 +38,7 @@ impl Process {
                         pout.append_line(line.unwrap(), ProcessOutputType::STDERR)
                     }
                 });
-            }*/
-            self.setup_stderr();
+            }
 
             {   // handle stdout
                 let procout = Arc::clone(&self_clone.state);
@@ -47,33 +46,31 @@ impl Process {
                 thread::spawn(move || {
                     for line in out.lines() {
                         let mut pout = procout.lock().unwrap();
+                        println!("{:?}", (*pout).pid);
                         pout.append_line(line.unwrap(), ProcessOutputType::STDOUT)
                     }
                 });
             }
 
-            {
+            {   // set pid
                 let procout = Arc::clone(&self_clone.state);
                 let mut pout = procout.lock().unwrap();
-                pout.set_pid(child.id());
+                pout.set_pid(Some(child.id()));
+                pout.set_status(ProcessStatusType::RUNNING);
             }
 
             let status = child.wait().unwrap();
-            //println!("{}", status);
-            //println!("{:?}", &self_clone.output);
-
-        })
-    }
-
-    fn setup_stderr(&self) {
-        let procout = Arc::clone(&self.clone().state);
-        let err = BufReader::new(child.stderr.take().unwrap());
-        thread::spawn(move || {
-            for line in err.lines() {
+            {   // set exit status
+                let procout = Arc::clone(&self_clone.state);
                 let mut pout = procout.lock().unwrap();
-                pout.append_line(line.unwrap(), ProcessOutputType::STDERR)
+                pout.set_pid(None);
+                pout.set_exit_code(status.code());
+                match pout.exit_code {
+                    Some(_) => pout.set_status(ProcessStatusType::FINISHED),
+                    None => pout.set_status(ProcessStatusType::TERMINATED),
+                }
             }
-        });
+        })
     }
 }
 
@@ -81,7 +78,9 @@ impl Process {
 pub struct ProcessState {
     stderr: Vec<String>,
     stdout: Vec<String>,
-    pid: u32,
+    pid: Option<u32>,
+    status: ProcessStatusType,
+    exit_code: Option<i32>,
     output_max_lines: usize
 }
 
@@ -105,18 +104,41 @@ impl ProcessState {
         }
     }
 
-    pub fn set_pid(&mut self, pid: u32) {
+    fn set_pid(&mut self, pid: Option<u32>) {
         self.pid = pid
+    }
+
+    fn set_exit_code(&mut self, exit_code: Option<i32>) {
+        self.exit_code = exit_code
+    }
+
+    fn set_status(&mut self, status: ProcessStatusType) {
+        self.status = status
     }
 }
 
 impl Default for ProcessState {
     fn default() -> Self {
-        Self { stderr: Vec::new(), stdout: Vec::new(), output_max_lines: 32768, pid: 0 }
+        Self { stderr: Vec::new(),
+               stdout: Vec::new(),
+               output_max_lines: 32768,
+               pid: None,
+               exit_code: None,
+               status: ProcessStatusType::CREATED
+           }
     }
 }
 
+#[derive(Debug)]
 enum ProcessOutputType {
     STDERR,
     STDOUT
+}
+
+#[derive(Debug, Clone)]
+enum ProcessStatusType {
+    CREATED,
+    RUNNING,
+    FINISHED,
+    TERMINATED
 }

@@ -12,7 +12,7 @@ impl Default for OpenVPN {
 }
 
 impl OpenVPN {
-    pub fn start(&self) {
+/*    pub fn start(&self) {
     }
 
     pub fn stop(&self) {
@@ -25,5 +25,5 @@ impl OpenVPN {
     }
 
     pub fn logs(&self) {
-    }
+    }*/
 }
