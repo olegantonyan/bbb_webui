@@ -61,7 +61,7 @@ fn rocket() -> rocket::Rocket {
 }
 
 fn main() {
-    let init = initd::InitD::default();
+    let mut init = initd::InitD::default();
     let ovp = initd::services::openvpn::OpenVPN::default();
     init.start_process(ovp);
     //initd::Process::new(initd::openvpn::OpenVPN::default()).start();
