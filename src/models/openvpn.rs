@@ -7,7 +7,7 @@ pub struct OpenVPN {
 
 impl Default for OpenVPN {
     fn default() -> Self {
-        OpenVPN { }
+        Self { }
     }
 }
 

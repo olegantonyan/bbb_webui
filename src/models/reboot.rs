@@ -9,7 +9,7 @@ pub struct Reboot {
 
 impl Default for Reboot {
     fn default() -> Self {
-        Reboot { command: "reboot" }
+        Self { command: "reboot" }
     }
 }
 

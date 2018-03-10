@@ -9,7 +9,7 @@ pub struct Uptime {
 
 impl Default for Uptime {
     fn default() -> Self {
-        Uptime { command: "uptime" }
+        Self { command: "uptime" }
     }
 }
 
