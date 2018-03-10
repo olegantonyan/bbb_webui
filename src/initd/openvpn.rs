@@ -2,6 +2,7 @@ use std::default::Default;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::thread;
+use std::sync::mpsc;
 
 
 #[derive(Debug)]
@@ -15,21 +16,30 @@ impl Default for OpenVPN {
 }
 
 #[derive(Debug)]
-struct StringWithCap {
-    storage: String,
+struct ProcessOutput {
+    stderr: String,
+    stdout: String,
     cap: usize
 }
 
-impl StringWithCap {
-    pub fn append(&mut self, data: &String) {
-        self.storage.push_str(data)
+impl ProcessOutput {
+    pub fn append_line(&mut self, data: &String, out_type: ProcessOutputType) {
+        match out_type {
+            ProcessOutputType::STDERR => self.stderr.push_str(data),
+            ProcessOutputType::STDOUT => self.stdout.push_str(data)
+        }
     }
 }
 
-impl Default for StringWithCap {
+impl Default for ProcessOutput {
     fn default() -> Self {
-        Self { storage: String::new(), cap: 1048576 }
+        Self { stderr: String::new(), stdout: String::new(), cap: 32768 }
     }
+}
+
+enum ProcessOutputType {
+    STDERR,
+    STDOUT
 }
 
 impl OpenVPN {
@@ -54,25 +64,27 @@ impl OpenVPN {
             let out = BufReader::new(child.stdout.take().unwrap());
             let err = BufReader::new(child.stderr.take().unwrap());
 
-            let mut stdout = StringWithCap::default();
+            let mut procout = ProcessOutput::default();
 
+            let (tx, rx) = mpsc::channel();
             let _thread_err = thread::spawn(move || {
-                let mut stderr = StringWithCap::default();
                 err.lines().for_each(|line|
                     //println!("err: {}", line.unwrap())
-                    stderr.append(&line.unwrap())
+                    tx.send(line.unwrap()).unwrap()
                 );
-                println!("{:?}", stderr);
             });
+            for line in rx {
+                procout.append_line(&line, ProcessOutputType::STDERR)
+            }
 
             out.lines().for_each(|line|
                 //println!("out: {}", line.unwrap())
-                stdout.append(&line.unwrap())
+                procout.append_line(&line.unwrap(), ProcessOutputType::STDOUT)
             );
 
             let status = child.wait().unwrap();
             println!("{}", status);
-            println!("{:?}", stdout);
+            println!("{:?}", procout);
 
         });
     }
