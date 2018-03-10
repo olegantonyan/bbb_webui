@@ -43,7 +43,7 @@ impl Process {
         self.send_signal(9);
     }
 
-    pub fn start<T: ServiceConfig>(&self, config: T) -> thread::JoinHandle<()> {
+    pub fn start<T: ServiceConfig>(&self, config: &T) -> thread::JoinHandle<()> {
         let state = Arc::clone(&self.state);
         let executable = config.executable();
 
@@ -147,6 +147,14 @@ impl ProcessState {
     fn set_status(&mut self, status: ProcessStatusType) {
         self.status = status
     }
+
+    pub fn pid(&self) -> Option<u32> {
+        self.pid
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.status == ProcessStatusType::RUNNING
+    }
 }
 
 impl Default for ProcessState {
@@ -168,7 +176,7 @@ pub enum ProcessOutputType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum ProcessStatusType {
+pub enum ProcessStatusType {
     CREATED,
     RUNNING,
     FINISHED,

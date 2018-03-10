@@ -4,8 +4,6 @@ pub mod services;
 use self::services::ServiceConfig;
 use self::process::Process;
 
-use std::time::Duration;
-use std::thread;
 use std::collections::HashMap;
 
 pub struct InitD {
@@ -27,25 +25,23 @@ impl InitD {
         }
     }
 
-    pub fn start_service<T: ServiceConfig>(&mut self, config: T) -> Result<&Process, &'static str> {
+    pub fn start_service<T: ServiceConfig>(&mut self, config: &T) -> Result<&Process, &'static str> {
         let process = Process::new();
         let service_name = config.name();
-        if self.processes.contains_key(service_name) {
-            return Err("service already exists");
+        match self.process(service_name) {
+            Some(ref process) => {
+                if process.state().is_running() {
+                    return Err("service already exists");
+                }
+            },
+            None => ()
         }
-
         process.start(config);
         self.processes.insert(service_name, process);
-
-        //thread::sleep(Duration::from_millis(1000));
-        //p.term(t);
-
-
-        //println!("{:?}", self.process(service_name).unwrap().state());
         Ok(&self.process(service_name).unwrap())
     }
 
-    pub fn stop_service<T: ServiceConfig>(&mut self, config: T) {
+    pub fn stop_service<T: ServiceConfig>(&mut self, config: &T) {
         let service_name = config.name();
         let mut remove = false;
         {   // fucking hate this "as mutable because it is also borrowed as immutable"
@@ -60,7 +56,7 @@ impl InitD {
         }
     }
 
-    pub fn restrart_service<T: ServiceConfig>(&mut self, config: T) {
+    pub fn restrart_service<T: ServiceConfig>(&mut self, config: &T) {
         self.stop_service(config);
         self.start_service(config);
     }

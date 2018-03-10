@@ -9,4 +9,5 @@
 {% block header %}VPN{% endblock header %}
 
 {% block content %}
+{{ pid }}
 {% endblock content %}
