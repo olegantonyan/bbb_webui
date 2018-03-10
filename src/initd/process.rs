@@ -1,3 +1,5 @@
+use super::services
+
 use std::default::Default;
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
@@ -13,7 +15,7 @@ pub struct Process {
 }
 
 impl Process {
-    pub fn new() -> Self {
+    pub fn new(config: services::ServiceConfig) -> Self {
         Self { state: Arc::new(Mutex::new(ProcessState::default())) }
     }
 
