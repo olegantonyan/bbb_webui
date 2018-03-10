@@ -26,9 +26,7 @@ impl InitD {
             None
         }
     }
-}
 
-impl InitD {
     pub fn start_service<T: ServiceConfig>(&mut self, config: T) -> Result<&Process, &'static str> {
         let process = Process::new();
         let service_name = config.name();
@@ -60,5 +58,10 @@ impl InitD {
         if remove {
             self.processes.remove(service_name);
         }
+    }
+
+    pub fn restrart_service<T: ServiceConfig>(&mut self, config: T) {
+        self.stop_service(config);
+        self.start_service(config);
     }
 }
