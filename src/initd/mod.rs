@@ -43,15 +43,7 @@ impl InitD {
 
     pub fn stop_service<T: ServiceConfig>(&mut self, config: &T) {
         let service_name = config.name();
-        let mut remove = false;
-        {   // fucking hate this "as mutable because it is also borrowed as immutable"
-            let process = self.process(service_name);
-            if process.is_some() {
-                process.unwrap().term();
-                remove = true;
-            }
-        }
-        if remove {
+        if self.stop_process(service_name) {
             self.processes.remove(service_name);
         }
     }
@@ -59,5 +51,15 @@ impl InitD {
     pub fn restrart_service<T: ServiceConfig>(&mut self, config: &T) {
         self.stop_service(config);
         self.start_service(config);
+    }
+
+    fn stop_process(&self, service_name: &'static str) -> bool {
+        let process = self.process(service_name);
+        if process.is_some() {
+            process.unwrap().term();
+            true
+        } else {
+            false
+        }
     }
 }
