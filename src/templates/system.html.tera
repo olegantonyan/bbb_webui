@@ -14,17 +14,16 @@
   <div class="pure-u-1-2">
     <p>
       <form class="pure-form" action="/system/reboot" method="post" accept-charset="utf-8" onsubmit="return confirm('Really reboot?');">
-        <input type="hidden" name="reboot" value="true">
-        <button class="pure-button pure-button-primary" type="submit">Reboot</button>
+        <button class="pure-button button-error" type="submit">Reboot</button>
       </form>
     </p>
   </div>
 
   <div class="pure-u-1-2">
-    <p>
-      {{ uptime }}
-    </p>
   </div>
+
 </div>
+
+<pre>{{ uptime }}</pre>
 
 {% endblock content %}

@@ -14,7 +14,11 @@ impl Default for Reboot {
 }
 
 impl Reboot {
-    pub fn execute(&self) {
-        Command::new(self.command).spawn().expect(format!("failed to execute `{}`", self.command).as_str());
+    pub fn execute(&self) -> String {
+        let result = Command::new(self.command).output();
+        match result {
+            Ok(_) => "rebooting now...".to_string(),
+            Err(error) => error.to_string()
+        }
     }
 }

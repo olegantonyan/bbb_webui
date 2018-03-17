@@ -5,5 +5,5 @@
 {% endblock menu %}
 
 
-{% block title %}Rebooting...{% endblock title %}
-{% block header %}Rebooting...{% endblock header %}
+{% block title %}{{message}}{% endblock title %}
+{% block header %}{{message}}{% endblock header %}

@@ -48,7 +48,6 @@ dependencies = [
 name = "bbb_webui"
 version = "0.1.0"
 dependencies = [
- "libc 0.2.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_codegen 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_contrib 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",

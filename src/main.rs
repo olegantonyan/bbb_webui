@@ -3,27 +3,25 @@
 
 extern crate rocket;
 extern crate rocket_contrib;
-extern crate libc;
 
-mod initd;
+mod systemd;
 mod models;
 
 use rocket_contrib::Template;
-use rocket::response::NamedFile;
+use rocket::response::{NamedFile, Redirect};
 use rocket::fairing::AdHoc;
 use rocket::State;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use initd::services::ServiceConfig;
 
 struct AssetsDir(String);
-pub struct InitD(initd::InitD);
 
 #[get("/")]
 pub fn index() -> Template {
-    let context: HashMap<String, String> = HashMap::new();
+    let mut context = HashMap::new();
+    context.insert("uptime", models::uptime::Uptime::default().execute());
     Template::render("index", &context)
 }
 
@@ -35,27 +33,42 @@ pub fn system() -> Template {
 }
 
 #[get("/vpn")]
-pub fn vpn(initd: State<InitD>) -> Template {
+pub fn vpn() -> Template {
     let mut context = HashMap::new();
 
-    let service_name = initd::services::openvpn::OpenVPN::default().name();
-    match initd.0.process(service_name) {
-        Some(ref process) => {
-            println!("{:?}", process.state());
-            context.insert("pid", process.state().pid().unwrap_or(0));
-        },
-        None => {
-            context.insert("pid", 0);
-        }
-    }
+    let ovp = models::openvpn::OpenVPN::default();
+    context.insert("status", ovp.status());
+    context.insert("logs", ovp.logs());
 
     Template::render("vpn", &context)
 }
 
+#[post("/vpn/start")]
+pub fn vpn_start() -> Redirect {
+    let ovp = models::openvpn::OpenVPN::default();
+    ovp.start();
+    Redirect::to("/vpn")
+}
+
+#[post("/vpn/stop")]
+pub fn vpn_stop() -> Redirect {
+    let ovp = models::openvpn::OpenVPN::default();
+    ovp.stop();
+    Redirect::to("/vpn")
+}
+
+#[post("/vpn/restart")]
+pub fn vpn_restart() -> Redirect {
+    let ovp = models::openvpn::OpenVPN::default();
+    ovp.restart();
+    Redirect::to("/vpn")
+}
+
 #[post("/system/reboot")]
 pub fn system_reboot() -> Template {
-    models::reboot::Reboot::default().execute();
-    let context: HashMap<String, String> = HashMap::new();
+    let result = models::reboot::Reboot::default().execute();
+    let mut context = HashMap::new();
+    context.insert("message", result);
     Template::render("rebooting", &context)
 }
 
@@ -66,32 +79,14 @@ fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", routes![index, system, vpn, system_reboot, assets])
+        .mount("/", routes![index, system, vpn, vpn_start, vpn_stop, vpn_restart, system_reboot, assets])
         .attach(Template::fairing())
         .attach(AdHoc::on_attach(|rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();
             Ok(rocket.manage(AssetsDir(assets_dir)))
         }))
-        .attach(AdHoc::on_attach(|rocket| {
-            Ok(rocket.manage(InitD(start_services())))
-        }))
-}
-
-fn start_services() -> initd::InitD {
-    let mut init = initd::InitD::default();
-    let ovp = initd::services::openvpn::OpenVPN::default();
-    init.start_service(&ovp);
-    init
 }
 
 fn main() {
-    //let mut init = initd::InitD::default();
-    //let ovp = initd::services::openvpn::OpenVPN::default();
-    //init.start_service(&ovp);
-    //initd::Process::new(initd::openvpn::OpenVPN::default()).start();
-    //let p = initd::process::Process::new();
-    //p.start(ovp).join();
-    //println!("p: {:?}", p.state());
-
     rocket().launch();
 }

@@ -9,4 +9,5 @@
 {% block header %}Index{% endblock header %}
 
 {% block content %}
+<pre>{{ uptime }}</pre>
 {% endblock content %}
