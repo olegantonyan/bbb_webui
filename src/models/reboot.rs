@@ -14,11 +14,11 @@ impl Default for Reboot {
 }
 
 impl Reboot {
-    pub fn execute(&self) -> String {
+    pub fn execute(&self) -> Result<String, String> {
         let result = Command::new(self.command).output();
         match result {
-            Ok(_) => "rebooting now...".to_string(),
-            Err(error) => error.to_string()
+            Ok(_) => Ok("rebooting now...".to_string()),
+            Err(error) => Err(error.to_string())
         }
     }
 }

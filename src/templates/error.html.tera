@@ -1,0 +1,20 @@
+{% extends "_layout" %}
+{% import "_menu" as menu %}
+{% block menu %}
+{{ menu::menu(active="none") }}
+{% endblock menu %}
+
+
+{% block title %}Error - {{message}}{% endblock title %}
+{% block header %}
+  <img src="/images/error.png" alt="You're screewed">
+{% endblock header %}
+
+{% block content %}
+<pre>{{message}}</pre>
+
+<a href="javascript:history.back()">
+  <button class="pure-button button-success" type="submit">Take me back</button>
+</a>
+
+{% endblock content %}

@@ -1,7 +1,7 @@
 {% extends "_layout" %}
 {% import "_menu" as menu %}
 {% block menu %}
-{{ menu::menu(active="index") }}
+{{ menu::menu(active="home") }}
 {% endblock menu %}
 
 

@@ -1,9 +1,0 @@
-{% extends "_layout" %}
-{% import "_menu" as menu %}
-{% block menu %}
-{{ menu::menu(active="none") }}
-{% endblock menu %}
-
-
-{% block title %}{{message}}{% endblock title %}
-{% block header %}{{message}}{% endblock header %}

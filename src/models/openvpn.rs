@@ -15,38 +15,23 @@ impl Default for OpenVPN {
 }
 
 impl OpenVPN {
-    pub fn start(&self) -> String {
-        match Systemd::start(self.service_name) {
-            Ok(stdout) => stdout,
-            Err(stderr) => stderr
-        }
+    pub fn start(&self) -> Result<String, String> {
+        Systemd::start(self.service_name)
     }
 
-    pub fn stop(&self) -> String {
-        match Systemd::stop(self.service_name) {
-            Ok(stdout) => stdout,
-            Err(stderr) => stderr
-        }
+    pub fn stop(&self) -> Result<String, String> {
+        Systemd::stop(self.service_name)
     }
 
-    pub fn restart(&self) -> String {
-        match Systemd::restart(self.service_name) {
-            Ok(stdout) => stdout,
-            Err(stderr) => stderr
-        }
+    pub fn restart(&self) -> Result<String, String> {
+        Systemd::restart(self.service_name)
     }
 
-    pub fn status(&self) -> String {
-        match Systemd::status(self.service_name) {
-            Ok(stdout) => stdout,
-            Err(stderr) => stderr
-        }
+    pub fn status(&self) -> Result<String, String> {
+        Systemd::status(self.service_name)
     }
 
-    pub fn logs(&self) -> String {
-        match Systemd::journal(self.service_name) {
-            Ok(stdout) => stdout,
-            Err(stderr) => stderr
-        }
+    pub fn logs(&self) -> Result<String, String> {
+        Systemd::journal(self.service_name) // TODO pass number of lines
     }
 }
