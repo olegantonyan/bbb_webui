@@ -1,0 +1,15 @@
+[Unit]
+Description=BeagleBoneBlack Web UI
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+Environment=ROCKET_ENV=production
+WorkingDirectory=/opt/bbb_webui
+ExecStart=/opt/bbb_webui/bbb_webui
+
+[Install]
+WantedBy=multi-user.target

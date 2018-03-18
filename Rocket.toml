@@ -11,7 +11,7 @@ assets_dir = "src/assets/"
 
 [production]
 address = "0.0.0.0"
-port = 8000
+port = 80
 log = "critical"
 workers= 8
 secret_key = "NIqxfW55N2Fkgeb1As00hR7FLFW+EI5int0tmnbIKhc="
