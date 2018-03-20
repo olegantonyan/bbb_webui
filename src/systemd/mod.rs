@@ -37,7 +37,7 @@ impl Systemd {
 
     pub fn journal(service_name: &'static str, max_lines: u32) -> Result<String, String> {
         let mut command = Command::new("journalctl");
-        command.args(&["-u", service_name, "--no-pager", "-n", max_lines.to_string().as_str(), "-r"]);
+        command.args(&["-u", service_name, "--no-pager", "-n", max_lines.to_string().as_str()]);
         Self::execute(command)
     }
 
