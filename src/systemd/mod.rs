@@ -7,18 +7,21 @@ pub struct Systemd {
 
 impl Systemd {
     pub fn start(service_name: &'static str) -> Result<String, String> {
+        Self::daemon_reload();
         let mut command = Command::new("systemctl");
         command.args(&["start", service_name]);
         Self::execute(command)
     }
 
     pub fn stop(service_name: &'static str) -> Result<String, String> {
+        Self::daemon_reload();
         let mut command = Command::new("systemctl");
         command.args(&["stop", service_name]);
         Self::execute(command)
     }
 
     pub fn restart(service_name: &'static str) -> Result<String, String> {
+        Self::daemon_reload();
         let s = Self::stop(service_name);
         if s.is_err() {
             return s;
@@ -32,10 +35,19 @@ impl Systemd {
         Self::execute(command)
     }
 
-    pub fn journal(service_name: &'static str) -> Result<String, String> {
+    pub fn journal(service_name: &'static str, max_lines: u32) -> Result<String, String> {
         let mut command = Command::new("journalctl");
-        command.args(&["-u", service_name, "--no-pager"]);
+        command.args(&["-u", service_name, "--no-pager", "-n", max_lines.to_string().as_str(), "-r"]);
         Self::execute(command)
+    }
+
+    pub fn daemon_reload() {
+        let mut command = Command::new("systemctl");
+        command.args(&["daemon-reload"]);
+        match Self::execute(command) {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error excecuting daemon-reload: {:?}", err)
+        }
     }
 
     fn execute(mut command: Command) -> Result<String, String> {

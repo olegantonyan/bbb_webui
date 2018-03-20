@@ -32,6 +32,6 @@ impl OpenVPN {
     }
 
     pub fn logs(&self) -> Result<String, String> {
-        Systemd::journal(self.service_name) // TODO pass number of lines
+        Systemd::journal(self.service_name, 128)
     }
 }
