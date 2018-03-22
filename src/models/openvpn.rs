@@ -34,4 +34,16 @@ impl OpenVPN {
     pub fn logs(&self) -> Result<String, String> {
         Systemd::journal(self.service_name, 128)
     }
+
+    pub fn change_config(&self, filename: String) -> Result<String, String> {
+        Ok("TODO".to_string())
+    }
+
+    pub fn available_configs(&self) -> Vec<String> {
+        vec!["one".to_string(), "two".to_string(), "ololol".to_string()]
+    }
+
+    pub fn current_config(&self) -> String {
+        "ololol".to_string()
+    }
 }

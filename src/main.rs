@@ -1,4 +1,4 @@
-#![feature(plugin, decl_macro)]
+#![feature(plugin, decl_macro, custom_derive)]
 #![plugin(rocket_codegen)]
 
 extern crate rocket;
@@ -11,12 +11,18 @@ use rocket_contrib::Template;
 use rocket::response::{NamedFile, Redirect};
 use rocket::fairing::AdHoc;
 use rocket::State;
+use rocket::request::{Form};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 
 struct AssetsDir(String);
+
+#[derive(FromForm, Debug)]
+pub struct VpnConfigfile {
+    vpn_config: String
+}
 
 #[get("/")]
 pub fn home() -> Template {
@@ -42,13 +48,15 @@ pub fn vpn() -> Template {
         Ok(data) => data,
         Err(data) => format!("Error: {}", data)
     };
-    context.insert("status", status);
+    context.insert("status", vec![status]);
 
     let logs = match ovp.logs() {
         Ok(data) => data,
         Err(data) => format!("Error: {}", data)
     };
-    context.insert("logs", logs);
+    context.insert("logs", vec![logs]);
+    context.insert("available_configs", ovp.available_configs());
+    context.insert("current_config", vec![ovp.current_config()]);
 
     Template::render("vpn", &context)
 }
@@ -92,6 +100,20 @@ pub fn vpn_restart() -> Result<Redirect, Template> {
     }
 }
 
+#[post("/vpn/change_config", data = "<configfile>")]
+pub fn vpn_change_config(configfile: Form<VpnConfigfile>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::default();
+    let cfg = configfile.get();
+    match ovp.change_config(cfg.vpn_config.clone()) {
+        Ok(_) => Ok(Redirect::to("/vpn")),
+        Err(data) => {
+            let mut context = HashMap::new();
+            context.insert("message", data);
+            Err(Template::render("error", &context))
+        }
+    }
+}
+
 #[post("/system/reboot")]
 pub fn system_reboot() -> Result<Redirect, Template> {
     match models::reboot::Reboot::default().execute() {
@@ -111,7 +133,7 @@ fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", routes![home, system, vpn, vpn_start, vpn_stop, vpn_restart, system_reboot, assets])
+        .mount("/", routes![home, system, vpn, vpn_start, vpn_stop, vpn_restart, vpn_change_config, system_reboot, assets])
         .attach(Template::fairing())
         .attach(AdHoc::on_attach(|rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();

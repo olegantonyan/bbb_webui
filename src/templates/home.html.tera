@@ -5,8 +5,8 @@
 {% endblock menu %}
 
 
-{% block title %}Index{% endblock title %}
-{% block header %}Index{% endblock header %}
+{% block title %}Home{% endblock title %}
+{% block header %}Home{% endblock header %}
 
 {% block content %}
 <pre>{{ uptime }}</pre>
