@@ -5,6 +5,7 @@ extern crate rocket;
 extern crate rocket_contrib;
 
 mod systemd;
+mod rwfs;
 mod models;
 
 use rocket_contrib::Template;
@@ -144,7 +145,8 @@ fn rocket() -> rocket::Rocket {
             let dir = rocket.config().get_str("vpn_config_dir").unwrap().to_owned();
             let fname = rocket.config().get_str("vpn_current_config_symlink_name").unwrap().to_owned();
             let srv = rocket.config().get_str("vpn_service_name").unwrap().to_owned();
-            let cfg = models::openvpn::Config { dir: dir, current_config_symlink_name: fname, service_name: srv };
+            let suf = rocket.config().get_str("vpn_config_file_suffix").unwrap().to_owned();
+            let cfg = models::openvpn::Config { dir: dir, current_config_symlink_name: fname, service_name: srv, vpn_config_file_suffix: suf };
             Ok(rocket.manage(VpnConfig(cfg)))
         }))
 }

@@ -11,6 +11,7 @@ assets_dir = "src/assets/"
 vpn_config_dir = "/home/oleg/Documents/tgvpn/"
 vpn_current_config_symlink_name = "current_config"
 vpn_service_name = "tgvpn"
+vpn_config_file_suffix = ".ovpn"
 
 [production]
 address = "192.168.1.10"
@@ -23,3 +24,4 @@ assets_dir = "assets/"
 vpn_config_dir = "/opt/tgvpn"
 vpn_current_config_symlink_name = "current_config"
 vpn_service_name = "tgvpn"
+vpn_config_file_suffix = ".ovpn"

@@ -1,12 +1,14 @@
 use std::fs;
 
 use ::systemd::Systemd as Systemd;
+use ::rwfs::RwFs as RwFs;
 
 #[derive(Debug)]
 pub struct Config {
     pub dir: String,
     pub current_config_symlink_name: String,
     pub service_name: String,
+    pub vpn_config_file_suffix: String
 }
 
 #[derive(Debug)]
@@ -17,7 +19,11 @@ pub struct OpenVPN {
 impl OpenVPN {
     pub fn new(c: &Config) -> Self {
         Self {
-            config: Config { dir: c.dir.clone(), current_config_symlink_name: c.current_config_symlink_name.clone(), service_name: c.service_name.clone() }
+            config: Config {
+                dir: c.dir.clone(),
+                current_config_symlink_name: c.current_config_symlink_name.clone(),
+                service_name: c.service_name.clone(),
+                vpn_config_file_suffix: c.vpn_config_file_suffix.clone() }
         }
     }
 
@@ -46,12 +52,16 @@ impl OpenVPN {
     }
 
     pub fn available_configs(&self) -> Vec<String> {
-        let paths = fs::read_dir("./").unwrap();
-
+        let paths = fs::read_dir(&self.config.dir).unwrap();
+        let mut configs = Vec::new();
         for path in paths {
-            println!("Name: {:?}", path.unwrap().path())
+            let p = path.unwrap().path().to_str().unwrap().to_string();
+            if p.ends_with(self.config.vpn_config_file_suffix.as_str()) {
+                let i = p.replace(&self.config.dir, "").replace("/", "");
+                configs.push(i);
+            }
         }
-        vec!["one".to_string(), "two".to_string(), "ololol".to_string()]
+        configs
     }
 
     pub fn current_config(&self) -> String {
