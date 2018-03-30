@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 
 
 struct AssetsDir(String);
+pub struct VpnConfig(models::openvpn::Config);
 
 #[derive(FromForm, Debug)]
 pub struct VpnConfigfile {
@@ -39,10 +40,10 @@ pub fn system() -> Template {
 }
 
 #[get("/vpn")]
-pub fn vpn() -> Template {
+pub fn vpn(vpn_config: State<VpnConfig>) -> Template {
     let mut context = HashMap::new();
 
-    let ovp = models::openvpn::OpenVPN::default();
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
 
     let status = match ovp.status() {
         Ok(data) => data,
@@ -62,8 +63,8 @@ pub fn vpn() -> Template {
 }
 
 #[post("/vpn/start")]
-pub fn vpn_start() -> Result<Redirect, Template> {
-    let ovp = models::openvpn::OpenVPN::default();
+pub fn vpn_start(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.start() {
         Ok(_) => Ok(Redirect::to("/vpn")),
         Err(data) => {
@@ -75,8 +76,8 @@ pub fn vpn_start() -> Result<Redirect, Template> {
 }
 
 #[post("/vpn/stop")]
-pub fn vpn_stop() -> Result<Redirect, Template> {
-    let ovp = models::openvpn::OpenVPN::default();
+pub fn vpn_stop(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.stop() {
         Ok(_) => Ok(Redirect::to("/vpn")),
         Err(data) => {
@@ -88,8 +89,8 @@ pub fn vpn_stop() -> Result<Redirect, Template> {
 }
 
 #[post("/vpn/restart")]
-pub fn vpn_restart() -> Result<Redirect, Template> {
-    let ovp = models::openvpn::OpenVPN::default();
+pub fn vpn_restart(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.restart() {
         Ok(_) => Ok(Redirect::to("/vpn")),
         Err(data) => {
@@ -101,8 +102,8 @@ pub fn vpn_restart() -> Result<Redirect, Template> {
 }
 
 #[post("/vpn/change_config", data = "<configfile>")]
-pub fn vpn_change_config(configfile: Form<VpnConfigfile>) -> Result<Redirect, Template> {
-    let ovp = models::openvpn::OpenVPN::default();
+pub fn vpn_change_config(configfile: Form<VpnConfigfile>, vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     let cfg = configfile.get();
     match ovp.change_config(cfg.vpn_config.clone()) {
         Ok(_) => Ok(Redirect::to("/vpn")),
@@ -138,6 +139,13 @@ fn rocket() -> rocket::Rocket {
         .attach(AdHoc::on_attach(|rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();
             Ok(rocket.manage(AssetsDir(assets_dir)))
+        }))
+        .attach(AdHoc::on_attach(|rocket| {
+            let dir = rocket.config().get_str("vpn_config_dir").unwrap().to_owned();
+            let fname = rocket.config().get_str("vpn_current_config_symlink_name").unwrap().to_owned();
+            let srv = rocket.config().get_str("vpn_service_name").unwrap().to_owned();
+            let cfg = models::openvpn::Config { dir: dir, current_config_symlink_name: fname, service_name: srv };
+            Ok(rocket.manage(VpnConfig(cfg)))
         }))
 }
 
