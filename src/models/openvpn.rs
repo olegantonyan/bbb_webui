@@ -1,4 +1,5 @@
 use std::fs;
+use std::process::Command as Command;
 
 use ::systemd::Systemd as Systemd;
 use ::rwfs::RwFs as RwFs;
@@ -48,23 +49,69 @@ impl OpenVPN {
     }
 
     pub fn change_config(&self, filename: String) -> Result<String, String> {
-        Ok("TODO".to_string())
+        let r = RwFs::new();
+        let result = r.rw();
+        if result.is_err() {
+            return result;
+        }
+
+        let mut command = Command::new("rm");
+        command.args(&[self.path_to_current_config().as_str()]);
+        let result = self.execute(command);
+        if result.is_err() {
+            return result;
+        }
+
+        let mut command = Command::new("ln");
+        command.args(&["-s", format!("{}/{}", self.config.dir, filename).as_str(), self.path_to_current_config().as_str()]);
+        let result = self.execute(command);
+        if result.is_err() {
+            return result;
+        }
+
+        let result = r.ro();
+        if result.is_err() {
+            return result;
+        }
+        self.restart()
     }
 
     pub fn available_configs(&self) -> Vec<String> {
         let paths = fs::read_dir(&self.config.dir).unwrap();
         let mut configs = Vec::new();
+        configs.push(String::new());
         for path in paths {
-            let p = path.unwrap().path().to_str().unwrap().to_string();
+            let p = path.unwrap().path().file_name().unwrap().to_str().unwrap().to_string();
             if p.ends_with(self.config.vpn_config_file_suffix.as_str()) {
-                let i = p.replace(&self.config.dir, "").replace("/", "");
-                configs.push(i);
+                configs.push(p);
             }
         }
         configs
     }
 
     pub fn current_config(&self) -> String {
-        "ololol".to_string()
+        let path = fs::read_link(&self.path_to_current_config());
+        match path {
+            Ok(fname) => fname.file_name().unwrap().to_str().unwrap().to_string(),
+            Err(_) => String::new()
+        }
+    }
+
+    fn execute(&self, mut command: Command) -> Result<String, String> {
+        let result = command.output();
+        match result {
+            Ok(output) => {
+                if output.status.success() {
+                    Ok(String::from_utf8(output.stdout).unwrap_or(String::new()))
+                } else {
+                    Err(String::from_utf8(output.stderr).unwrap_or(String::new()))
+                }
+            },
+            Err(error) => Err(error.to_string())
+        }
+    }
+
+    fn path_to_current_config(&self) -> String {
+        format!("{}/{}", self.config.dir, self.config.current_config_symlink_name)
     }
 }
