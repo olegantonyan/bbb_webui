@@ -8,6 +8,10 @@ log = "normal"
 secret_key = "ebX2LbNb8vVqqNHqeaeAZzR+orGhrMqTuo7PkIhOFJg="
 template_dir = "src/templates/"
 assets_dir = "src/assets/"
+vpn_config_dir = "/home/oleg/Documents/tgvpn/"
+vpn_current_config_symlink_name = "current_config"
+vpn_service_name = "tgvpn"
+vpn_config_file_suffix = ".ovpn"
 
 [production]
 address = "192.168.1.10"
@@ -17,3 +21,7 @@ workers= 8
 secret_key = "NIqxfW55N2Fkgeb1As00hR7FLFW+EI5int0tmnbIKhc="
 template_dir = "templates/"
 assets_dir = "assets/"
+vpn_config_dir = "/opt/tgvpn"
+vpn_current_config_symlink_name = "current_config"
+vpn_service_name = "tgvpn"
+vpn_config_file_suffix = ".ovpn"
