@@ -53,6 +53,14 @@
   </div>
 </div>
 
+<h3>Post start script</h3>
+<form class="pure-form" action="/vpn/poststart/save" method="post" accept-charset="utf-8">
+  <fieldset class="pure-group">
+    <textarea class="pure-input-1-2" placeholder="" name="script">{{ poststart.0 }}</textarea>
+  </fieldset>
+  <button class="pure-button button-success" type="submit">Save</button>
+</form>
+
 <h3>Logs</h3>
 <pre>{{ logs.0 }}</pre>
 

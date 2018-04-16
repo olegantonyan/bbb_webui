@@ -1,5 +1,6 @@
 #![feature(plugin, decl_macro, custom_derive)]
 #![plugin(rocket_codegen)]
+#![feature(fs_read_write)]
 
 extern crate rocket;
 extern crate rocket_contrib;
@@ -24,6 +25,11 @@ pub struct VpnConfig(models::openvpn::Config);
 #[derive(FromForm, Debug)]
 pub struct VpnConfigfile {
     vpn_config: String
+}
+
+#[derive(FromForm, Debug)]
+pub struct PoststartScript {
+    script: String
 }
 
 #[get("/")]
@@ -59,6 +65,7 @@ pub fn vpn(vpn_config: State<VpnConfig>) -> Template {
     context.insert("logs", vec![logs]);
     context.insert("available_configs", ovp.available_configs());
     context.insert("current_config", vec![ovp.current_config()]);
+    context.insert("poststart", vec![ovp.poststart()]);
 
     Template::render("vpn", &context)
 }
@@ -116,6 +123,21 @@ pub fn vpn_change_config(configfile: Form<VpnConfigfile>, vpn_config: State<VpnC
     }
 }
 
+#[post("/vpn/poststart/save", data = "<script>")]
+pub fn vpn_poststart_save(script: Form<PoststartScript>, vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
+    let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
+    let data = script.get();
+
+    match ovp.save_poststart(data.script.clone().replace("\r", "")) {
+        Ok(_) => Ok(Redirect::to("/vpn")),
+        Err(data) => {
+            let mut context = HashMap::new();
+            context.insert("message", data);
+            Err(Template::render("error", &context))
+        }
+    }
+}
+
 #[post("/system/reboot")]
 pub fn system_reboot() -> Result<Redirect, Template> {
     match models::reboot::Reboot::default().execute() {
@@ -135,7 +157,7 @@ fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", routes![home, system, vpn, vpn_start, vpn_stop, vpn_restart, vpn_change_config, system_reboot, assets])
+        .mount("/", routes![home, system, vpn, vpn_start, vpn_stop, vpn_restart, vpn_change_config, system_reboot, assets, vpn_poststart_save])
         .attach(Template::fairing())
         .attach(AdHoc::on_attach(|rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();
@@ -146,7 +168,8 @@ fn rocket() -> rocket::Rocket {
             let fname = rocket.config().get_str("vpn_current_config_symlink_name").unwrap().to_owned();
             let srv = rocket.config().get_str("vpn_service_name").unwrap().to_owned();
             let suf = rocket.config().get_str("vpn_config_file_suffix").unwrap().to_owned();
-            let cfg = models::openvpn::Config { dir: dir, current_config_symlink_name: fname, service_name: srv, vpn_config_file_suffix: suf };
+            let ps = rocket.config().get_str("poststart_script").unwrap().to_owned();
+            let cfg = models::openvpn::Config { dir: dir, current_config_symlink_name: fname, service_name: srv, vpn_config_file_suffix: suf, poststart_script: ps };
             Ok(rocket.manage(VpnConfig(cfg)))
         }))
 }

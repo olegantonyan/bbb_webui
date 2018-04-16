@@ -1,5 +1,6 @@
 use std::fs;
 use std::process::Command as Command;
+use std::io::prelude::*;
 
 use ::systemd::Systemd as Systemd;
 use ::rwfs::RwFs as RwFs;
@@ -9,7 +10,8 @@ pub struct Config {
     pub dir: String,
     pub current_config_symlink_name: String,
     pub service_name: String,
-    pub vpn_config_file_suffix: String
+    pub vpn_config_file_suffix: String,
+    pub poststart_script: String,
 }
 
 #[derive(Debug)]
@@ -24,7 +26,8 @@ impl OpenVPN {
                 dir: c.dir.clone(),
                 current_config_symlink_name: c.current_config_symlink_name.clone(),
                 service_name: c.service_name.clone(),
-                vpn_config_file_suffix: c.vpn_config_file_suffix.clone() }
+                vpn_config_file_suffix: c.vpn_config_file_suffix.clone(),
+                poststart_script: c.poststart_script.clone() }
         }
     }
 
@@ -97,6 +100,29 @@ impl OpenVPN {
         }
     }
 
+    pub fn poststart(&self) -> String {
+        let mut file = fs::File::open(self.path_to_poststart()).expect("file not found");
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).expect("something went wrong reading the file");
+        contents
+    }
+
+    pub fn save_poststart(&self, data: String) -> Result<String, String> {
+        let r = RwFs::new();
+        let result = r.rw();
+        if result.is_err() {
+            return result;
+        }
+
+        fs::write(self.path_to_poststart(), data).expect("unable to write data");
+
+        let result = r.ro();
+        if result.is_err() {
+            return result;
+        }
+        self.restart()
+    }
+
     fn execute(&self, mut command: Command) -> Result<String, String> {
         let result = command.output();
         match result {
@@ -113,5 +139,9 @@ impl OpenVPN {
 
     fn path_to_current_config(&self) -> String {
         format!("{}/{}", self.config.dir, self.config.current_config_symlink_name)
+    }
+
+    fn path_to_poststart(&self) -> String {
+        format!("{}/{}", self.config.dir, self.config.poststart_script)
     }
 }

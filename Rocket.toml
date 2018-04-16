@@ -12,6 +12,7 @@ vpn_config_dir = "/home/oleg/Documents/tgvpn/"
 vpn_current_config_symlink_name = "current_config"
 vpn_service_name = "tgvpn"
 vpn_config_file_suffix = ".ovpn"
+poststart_script = "poststart.sh"
 
 [production]
 address = "192.168.1.10"
@@ -25,3 +26,4 @@ vpn_config_dir = "/opt/tgvpn"
 vpn_current_config_symlink_name = "current_config"
 vpn_service_name = "tgvpn"
 vpn_config_file_suffix = ".ovpn"
+poststart_script = "poststart.sh"
