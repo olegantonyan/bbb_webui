@@ -1,15 +1,13 @@
-#![feature(plugin, decl_macro, custom_derive)]
-#![plugin(rocket_codegen)]
-#![feature(fs_read_write)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
-extern crate rocket;
+#[macro_use] extern crate rocket;
 extern crate rocket_contrib;
 
 mod systemd;
 mod rwfs;
 mod models;
 
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use rocket::response::{NamedFile, Redirect};
 use rocket::fairing::AdHoc;
 use rocket::State;
@@ -17,7 +15,6 @@ use rocket::request::{Form};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
 
 struct AssetsDir(String);
 pub struct VpnConfig(models::openvpn::Config);
@@ -32,13 +29,6 @@ pub struct PoststartScript {
     script: String
 }
 
-#[get("/")]
-pub fn home() -> Template {
-    let mut context = HashMap::new();
-    context.insert("uptime", models::uptime::Uptime::default().execute());
-    Template::render("home", &context)
-}
-
 #[get("/system")]
 pub fn system() -> Template {
     let mut context = HashMap::new();
@@ -46,7 +36,7 @@ pub fn system() -> Template {
     Template::render("system", &context)
 }
 
-#[get("/vpn")]
+#[get("/")]
 pub fn vpn(vpn_config: State<VpnConfig>) -> Template {
     let mut context = HashMap::new();
 
@@ -74,7 +64,7 @@ pub fn vpn(vpn_config: State<VpnConfig>) -> Template {
 pub fn vpn_start(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
     let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.start() {
-        Ok(_) => Ok(Redirect::to("/vpn")),
+        Ok(_) => Ok(Redirect::to("/")),
         Err(data) => {
             let mut context = HashMap::new();
             context.insert("message", data);
@@ -87,7 +77,7 @@ pub fn vpn_start(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
 pub fn vpn_stop(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
     let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.stop() {
-        Ok(_) => Ok(Redirect::to("/vpn")),
+        Ok(_) => Ok(Redirect::to("/")),
         Err(data) => {
             let mut context = HashMap::new();
             context.insert("message", data);
@@ -100,7 +90,7 @@ pub fn vpn_stop(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
 pub fn vpn_restart(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
     let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
     match ovp.restart() {
-        Ok(_) => Ok(Redirect::to("/vpn")),
+        Ok(_) => Ok(Redirect::to("/")),
         Err(data) => {
             let mut context = HashMap::new();
             context.insert("message", data);
@@ -112,9 +102,8 @@ pub fn vpn_restart(vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
 #[post("/vpn/change_config", data = "<configfile>")]
 pub fn vpn_change_config(configfile: Form<VpnConfigfile>, vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
     let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
-    let cfg = configfile.get();
-    match ovp.change_config(cfg.vpn_config.clone()) {
-        Ok(_) => Ok(Redirect::to("/vpn")),
+    match ovp.change_config(configfile.vpn_config.clone()) {
+        Ok(_) => Ok(Redirect::to("/")),
         Err(data) => {
             let mut context = HashMap::new();
             context.insert("message", data);
@@ -126,10 +115,9 @@ pub fn vpn_change_config(configfile: Form<VpnConfigfile>, vpn_config: State<VpnC
 #[post("/vpn/poststart/save", data = "<script>")]
 pub fn vpn_poststart_save(script: Form<PoststartScript>, vpn_config: State<VpnConfig>) -> Result<Redirect, Template> {
     let ovp = models::openvpn::OpenVPN::new(&vpn_config.0);
-    let data = script.get();
 
-    match ovp.save_poststart(data.script.clone().replace("\r", "")) {
-        Ok(_) => Ok(Redirect::to("/vpn")),
+    match ovp.save_poststart(script.script.clone().replace("\r", "")) {
+        Ok(_) => Ok(Redirect::to("/")),
         Err(data) => {
             let mut context = HashMap::new();
             context.insert("message", data);
@@ -157,13 +145,13 @@ fn assets(asset: PathBuf, assets_dir: State<AssetsDir>) -> Option<NamedFile> {
 
 fn rocket() -> rocket::Rocket {
     rocket::ignite()
-        .mount("/", routes![home, system, vpn, vpn_start, vpn_stop, vpn_restart, vpn_change_config, system_reboot, assets, vpn_poststart_save])
+        .mount("/", routes![system, vpn, assets, vpn_start, vpn_stop, vpn_restart, system_reboot, vpn_change_config, vpn_poststart_save])
         .attach(Template::fairing())
-        .attach(AdHoc::on_attach(|rocket| {
+        .attach(AdHoc::on_attach("assets", |rocket| {
             let assets_dir = rocket.config().get_str("assets_dir").unwrap().to_string();
             Ok(rocket.manage(AssetsDir(assets_dir)))
         }))
-        .attach(AdHoc::on_attach(|rocket| {
+        .attach(AdHoc::on_attach("config file", |rocket| {
             let dir = rocket.config().get_str("vpn_config_dir").unwrap().to_owned();
             let fname = rocket.config().get_str("vpn_current_config_symlink_name").unwrap().to_owned();
             let srv = rocket.config().get_str("vpn_service_name").unwrap().to_owned();

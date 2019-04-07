@@ -1,16 +1,15 @@
 [package]
 name = "bbb_webui"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Oleg Antonyan <oleg.b.antonyan@gmail.com>"]
 
 [dependencies]
 rocket = "*"
-rocket_codegen = "*"
 
 [dependencies.rocket_contrib]
 version = "*"
 default-features = false
-features = ["tera_templates"]
+features = ["tera_templates", "serve"]
 
 [profile.release]
 panic = "abort"
