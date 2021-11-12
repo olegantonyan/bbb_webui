@@ -1,10 +1,11 @@
 [package]
 name = "bbb_webui"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Oleg Antonyan <oleg.b.antonyan@gmail.com>"]
 
 [dependencies]
 rocket = "*"
+rust-embed = "*"
 
 [dependencies.rocket_contrib]
 version = "*"
